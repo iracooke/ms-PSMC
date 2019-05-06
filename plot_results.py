@@ -7,16 +7,23 @@
 # PSMC software.                                                              #
 ###############################################################################
 
+import sys
 import matplotlib.pyplot as plt
 
 # Set the values of these global variables
+# OK .. rather than have these as global variables I 
+# have made them command line arguments. 
+# This allows the user to easily supply different values without 
+# hard coding changes in the script
+#
 #==============================================================================
 # The original ms command:
-MS_COMMAND = "./ms 2 100 -t 30000 -r 6000 30000000 -eN 0.01 0.1 -eN 0.06 1 \
-                -eN 0.2 0.5 -eN 1 1 -eN 2 2 -p 8 -seeds 1747 45896 23615"
+MS_COMMAND = sys.argv[1]
 
 # Path to the output file comming from the PSMC
-PSMC_RESULTS = "./dem_history_sim1.psmc"
+PSMC_RESULTS = sys.argv[2]
+
+OUTPUT_FILE = PSMC_RESULTS.replace(".psmc",".png")
 
 # Bin size used to generate the imput of PSMC (default is 100)
 BIN_SIZE = 100
@@ -46,7 +53,15 @@ def ms2fun(ms_command = MS_COMMAND, u = MUTATION_RATE):
     size_changes = ms_command.split(' -eN ')
     (t_k, alpha_k) = ([i.split(' ')[0] for i in size_changes[1:]], [j.split(' ')[1] for j in size_changes[1:]])
     
-    t0 = min(X_MIN, (GENERAITON_TIME * 4 * N0 * float(t_k[0]))/2)
+    # This edit is to get around the situation where you don't have an -eN args in your ms command
+    # In that case the simulated pop size is constant.  
+    # This hack wont get the start/end times exactly right but will plot a line at the correct
+    # constant value so you can compare it with the simulation
+    #
+    if len(size_changes)>1:
+        t0 = min(X_MIN, (GENERAITON_TIME * 4 * N0 * float(t_k[0]))/2)
+    else:
+        t0=X_MIN
     # Scalling times and population sizes
     times = [t0] + [GENERAITON_TIME * 4 * N0 * float(i) for i in t_k]
     sizes = [N0] + [N0 * float(i) for i in alpha_k]
@@ -109,5 +124,8 @@ if __name__ == "__main__":
     ax.set_xscale('log')
     plt.legend(loc = 'best')
     
-    plt.show()
+    # Instead of show we save the file#
+    plt.savefig(OUTPUT_FILE)    
+
+#    plt.show()
 
